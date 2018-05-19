@@ -123,6 +123,28 @@ pokemon.er.managed // Return the managed version of the object if one exist in R
 pokemon.er.unmanaged // Return an unmanaged version of the object
 ```
 
+### Thread Safe Usage
+* ThreadSafeResolvable :
+```swift
+let resolvable = pokemon.er.threadSafeResolvable
+DispatchQueue.global().async {
+  let pokemon = try resolvable.resolve()
+}
+```
+
+* ThreadSafeWrapper :
+```swift
+let pokemonThreadSafe = pokemon.er.threadSafeWrapper
+DispatchQueue(label: UUID().uuidString).async {
+  print(try pokemonThreadSafe.object()?.name)
+
+  // Pass to as many threads as you like
+  DispatchQueue(label: UUID().uuidString).async {
+    print(try pokemonThreadSafe.object()?.name)
+  }
+}
+```
+
 
 ## Installation
 
