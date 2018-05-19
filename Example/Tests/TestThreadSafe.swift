@@ -23,7 +23,22 @@ class TestThreadSafe: XCTestCase {
         try! realm.write { realm.deleteAll() }
     }
     
-    func testThreadSafe() {
+    func testResolvable() {
+        let pokeball = Pokeball.create()
+        try! pokeball.er.edit {
+            $0.branding = "OK"
+        }
+        try! pokeball.er.save()
+        
+        let threadSafePokeballResolvable = try! Pokeball.er.all().first!.er.threadSafeResolvable
+        DispatchQueue(label: UUID().uuidString).async {
+            XCTAssert(try! threadSafePokeballResolvable.resolve()!.branding == "OK")
+        }
+        
+        sleep(3)
+    }
+    
+    func testWrapper() {
         let pokeball = Pokeball.create()
         try! pokeball.er.edit {
             $0.branding = "OK"
