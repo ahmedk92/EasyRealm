@@ -22,15 +22,18 @@ public struct ThreadSafeResolvable<T: Object> {
 
 public class ThreadSafeWrapper<T: Object> {
     private var threadSafe: ThreadSafeBox<T>
+    private var accessQueue = DispatchQueue.init(label: UUID().uuidString)
     
     public func object() throws -> T? {
-        if threadSafe.lastThreadDescription == Thread.current.description {
-            return threadSafe._object
-        } else {
-            guard let object = try threadSafe.resolvable.resolve() else { return nil }
-            threadSafe = ThreadSafeBox(object: object)
-            return threadSafe._object
-        }
+        return try accessQueue.sync(execute: { () -> T? in
+            if threadSafe.lastThreadDescription == Thread.current.description {
+                return threadSafe._object
+            } else {
+                guard let object = try threadSafe.resolvable.resolve() else { return nil }
+                threadSafe = ThreadSafeBox(object: object)
+                return threadSafe._object
+            }
+        })
     }
     
     public init(object: T) {
