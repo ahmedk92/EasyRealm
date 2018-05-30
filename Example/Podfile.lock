@@ -10,14 +10,9 @@ PODS:
 DEPENDENCIES:
   - EasyRealm (from `../`)
 
-SPEC REPOS:
-  https://github.com/CocoaPods/Specs.git:
-    - Realm
-    - RealmSwift
-
 EXTERNAL SOURCES:
   EasyRealm:
-    :path: "../"
+    :path: ../
 
 SPEC CHECKSUMS:
   EasyRealm: 79717ab7698848ed9287ed1ec6054f0fbf73009b
@@ -26,4 +21,4 @@ SPEC CHECKSUMS:
 
 PODFILE CHECKSUM: 75271464d388777fdf0703576b224eaba6178765
 
-COCOAPODS: 1.5.0
+COCOAPODS: 1.4.0
