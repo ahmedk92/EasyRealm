@@ -8,11 +8,11 @@
 import RealmSwift
 
 public struct ThreadSafeResolvable<T: Object> {
-    typealias Generator = () throws -> T?
+    typealias Generator = (Realm) throws -> T?
     private let generator: Generator
     
     public func resolve() throws -> T? {
-        return try generator()
+        return try generator(try Realm())
     }
     
     init(generator: @escaping Generator) {
@@ -22,22 +22,27 @@ public struct ThreadSafeResolvable<T: Object> {
 
 public class ThreadSafeWrapper<T: Object> {
     private var threadSafeBox: ThreadSafeBox<T>
-    private var accessQueue = DispatchQueue.init(label: UUID().uuidString)
+    private var lock = NSObject()
     
     public func object() throws -> T? {
-        let currentThreadDescription = Thread.current.description
-        return try accessQueue.sync(execute: { () -> ThreadSafeBox<T>? in
-            if threadSafeBox.lastThreadDescription == currentThreadDescription {
-                return threadSafeBox
-            } else {
-                guard let object = try threadSafeBox.resolvable.resolve() else { return nil }
-                threadSafeBox = ThreadSafeBox(object: object)
-                return threadSafeBox
-            }
-        })?._object
+        objc_sync_enter(lock)
+        defer {
+            objc_sync_exit(lock)
+        }
+        if threadSafeBox.lastThreadDescription == Thread.current.description {
+            return threadSafeBox._object
+        } else {
+            guard let object = try threadSafeBox.resolvable.resolve() else { return nil }
+            threadSafeBox = ThreadSafeBox(object: object)
+            return threadSafeBox._object
+        }
     }
     
     public init(object: T) {
+        objc_sync_enter(lock)
+        defer {
+            objc_sync_exit(lock)
+        }
         threadSafeBox = ThreadSafeBox(object: object)
     }
 }
@@ -57,8 +62,7 @@ fileprivate struct ThreadSafeBox<T: Object> {
 extension EasyRealm where T: Object {
     public var threadSafeResolvable: ThreadSafeResolvable<T> {
         return { (reference) in
-            return ThreadSafeResolvable(generator: {
-                let realm = try Realm()
+            return ThreadSafeResolvable(generator: { (realm) in
                 return realm.resolve(reference)
             })
         }(ThreadSafeReference(to: self.base))

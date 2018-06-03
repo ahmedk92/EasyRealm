@@ -46,16 +46,17 @@ class TestThreadSafe: XCTestCase {
         try! pokeball.er.save()
         
         let threadSafePokeball = try! Pokeball.er.all().first!.er.threadSafeWrapper
-        DispatchQueue(label: UUID().uuidString).async {
+        
+        XCTAssert(try! threadSafePokeball.object()!.branding == "OK")
+        
+        DispatchQueue.global(qos: .userInitiated).async {
             XCTAssert(try! threadSafePokeball.object()!.branding == "OK")
-            
-            // Pass to as many threads as you like
-            DispatchQueue(label: UUID().uuidString).async {
-                XCTAssert(try! threadSafePokeball.object()!.branding == "OK")
-            }
         }
         
-        sleep(3)
+        sleep(5)
+        
+        XCTAssert(try! threadSafePokeball.object()!.branding == "OK")
+        
     }
 }
 
